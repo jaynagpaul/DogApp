@@ -12,6 +12,8 @@
     "@devexpress/dx-react-core": "2.7.5",
     "@material-ui/core": "4.11.3",
     "@material-ui/icons": "4.11.2",
+    "dexie": "*",
+    "dexie-react-hooks": "^1.0.7",
     "react": "latest",
     "react-dom": "latest"
   },

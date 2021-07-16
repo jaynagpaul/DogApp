@@ -1,115 +1,116 @@
-import * as React from "react";
-import Paper from "@material-ui/core/Paper";
+import * as React from 'react';
+import Paper from '@material-ui/core/Paper';
 import {
   Chart,
   ArgumentAxis,
   ValueAxis,
   LineSeries,
   Title,
-  Legend
-} from "@devexpress/dx-react-chart-material-ui";
-import { withStyles } from "@material-ui/core/styles";
-import { Animation } from "@devexpress/dx-react-chart";
-
+  Legend,
+} from '@devexpress/dx-react-chart-material-ui';
+import { withStyles } from '@material-ui/core/styles';
+import { Animation } from '@devexpress/dx-react-chart';
+import { Plugin } from '@devexpress/dx-react-core';
+import db from './db';
 const data = [
   {
     year: 1993,
     tvNews: 19,
     church: 29,
-    military: 32
+    military: 32,
   },
   {
     year: 1995,
     tvNews: 13,
     church: 32,
-    military: 33
+    military: 33,
   },
   {
     year: 1997,
     tvNews: 14,
     church: 35,
-    military: 30
+    military: 30,
   },
   {
     year: 1999,
     tvNews: 13,
     church: 32,
-    military: 34
+    military: 34,
   },
   {
     year: 2001,
     tvNews: 15,
     church: 28,
-    military: 32
+    military: 32,
   },
   {
     year: 2003,
     tvNews: 16,
     church: 27,
-    military: 48
+    military: 48,
   },
   {
     year: 2006,
     tvNews: 12,
     church: 28,
-    military: 41
+    military: 41,
   },
   {
     year: 2008,
     tvNews: 11,
     church: 26,
-    military: 45
+    military: 45,
   },
   {
     year: 2010,
     tvNews: 10,
     church: 25,
-    military: 44
+    military: 44,
   },
   {
     year: 2012,
     tvNews: 11,
     church: 25,
-    military: 43
+    military: 43,
   },
   {
     year: 2014,
     tvNews: 10,
     church: 25,
-    military: 39
+    military: 39,
   },
   {
     year: 2016,
     tvNews: 8,
     church: 20,
-    military: 41
+    military: 41,
   },
   {
     year: 2018,
     tvNews: 10,
     church: 20,
-    military: 43
-  }
+    military: 43,
+  },
 ];
 
 const format = () => (tick) => tick;
 const legendStyles = () => ({
   root: {
-    display: "flex",
-    margin: "auto",
-    flexDirection: "row"
-  }
+    display: 'flex',
+    margin: 'auto',
+    flexDirection: 'row',
+  },
 });
 const legendLabelStyles = (theme) => ({
   label: {
     paddingTop: theme.spacing(1),
-    whiteSpace: "nowrap"
-  }
+    whiteSpace: 'nowrap',
+  },
 });
 const legendItemStyles = () => ({
   item: {
-    flexDirection: "column"
-  }
+    flexDirection: 'column',
+  },
 });
 
 const legendRootBase = ({ classes, ...restProps }) => (
@@ -121,20 +122,20 @@ const legendLabelBase = ({ classes, ...restProps }) => (
 const legendItemBase = ({ classes, ...restProps }) => (
   <Legend.Item className={classes.item} {...restProps} />
 );
-const Root = withStyles(legendStyles, { name: "LegendRoot" })(legendRootBase);
-const Label = withStyles(legendLabelStyles, { name: "LegendLabel" })(
+const Root = withStyles(legendStyles, { name: 'LegendRoot' })(legendRootBase);
+const Label = withStyles(legendLabelStyles, { name: 'LegendLabel' })(
   legendLabelBase
 );
-const Item = withStyles(legendItemStyles, { name: "LegendItem" })(
+const Item = withStyles(legendItemStyles, { name: 'LegendItem' })(
   legendItemBase
 );
 const demoStyles = () => ({
   chart: {
-    paddingRight: "20px"
+    paddingRight: '20px',
   },
   title: {
-    whiteSpace: "pre"
-  }
+    whiteSpace: 'pre',
+  },
 });
 
 const ValueLabel = (props) => {
@@ -144,35 +145,80 @@ const ValueLabel = (props) => {
 
 const titleStyles = {
   title: {
-    whiteSpace: "pre"
-  }
+    whiteSpace: 'pre',
+  },
 };
 const TitleText = withStyles(titleStyles)(({ classes, ...props }) => (
   <Title.Text {...props} className={classes.title} />
 ));
+
+const LabelText = ({ text, ...props }) => (
+  <ArgumentAxis.Label
+    text={new Date(text).toLocaleDateString('en-US')}
+    {...props}
+  />
+);
 
 class Demo extends React.PureComponent {
   constructor(props) {
     super(props);
 
     this.state = {
-      data
+      data: [],
+      dogs: [],
     };
   }
 
+  async componentDidMount() {
+    const dogs = await db.dogs.toArray();
+    const scoresList = await Promise.all(
+      dogs.map(async (d) => {
+        return await db.load.where('dogID').equals(d.id).toArray();
+      })
+    ); // [
+    //  [
+    //   { dogID: 1, score: 1, date: '2018-01-01' },
+    //   {dogID: 1, ...}
+    //  ],
+    //  ...]
+
+    let data = [];
+    for (var oneDogScores of scoresList) {
+      if (oneDogScores.length > 0) {
+        for (var score of oneDogScores) {
+          let d = {
+            date: score.date,
+          };
+          d[score.dogID] = score.score;
+          data.push(d);
+        }
+      }
+    }
+
+    this.setState({ data, dogs });
+  }
+
   render() {
-    const { data: chartData } = this.state;
+    const { data: chartData, dogs } = this.state;
     const { classes } = this.props;
+
+    const linesSeries = dogs.map((dog) => {
+      return (
+        <LineSeries name={dog.name} valueField={dog.id} argumentField="date" />
+      );
+    });
 
     return (
       <Paper>
         <Chart data={chartData} className={classes.chart}>
-          <ArgumentAxis tickFormat={format} showLabels={false} />
+          <ArgumentAxis
+            labelComponent={LabelText}
+            tickFormat={format}
+            showLabels={true}
+          />
           <ValueAxis max={50} labelComponent={ValueLabel} />
 
-          <LineSeries name="Dog 1" valueField="tvNews" argumentField="year" />
-          <LineSeries name="Dog 2" valueField="church" argumentField="year" />
-          <LineSeries name="Dog 3" valueField="military" argumentField="year" />
+          <Plugin name="ser">{linesSeries}</Plugin>
           <Legend
             position="bottom"
             rootComponent={Root}
@@ -187,4 +233,4 @@ class Demo extends React.PureComponent {
   }
 }
 
-export default withStyles(demoStyles, { name: "Demo" })(Demo);
+export default withStyles(demoStyles, { name: 'Demo' })(Demo);

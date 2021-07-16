@@ -6,16 +6,34 @@ import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
+import Button from '@material-ui/core/Button';
+
+// import db
+import db from './db';
+import DogPicker from './DogPicker';
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    // width: 300
-  },
+  // root: {
+  //   // width: 300
+  // },
   margin: {
     height: theme.spacing(3),
   },
   markLabel: {
     color: 'blue',
+  },
+  root: {
+    '& > *': {
+      margin: theme.spacing(1),
+      width: '25ch',
+    },
+  },
+  formControl: {
+    margin: theme.spacing(1),
+    minWidth: 120,
+  },
+  selectEmpty: {
+    marginTop: theme.spacing(2),
   },
 }));
 
@@ -32,6 +50,8 @@ function valuetext(value) {
 export default function DiscreteSlider() {
   const [total, setTotal] = React.useState(0);
   const [questionaire, setQuestionaire] = React.useState('load');
+  const [dog, setDog] = React.useState(null);
+
   function updateTotal() {
     var t = 0;
     for (var el of document.querySelectorAll('.testa')) {
@@ -85,12 +105,33 @@ export default function DiscreteSlider() {
           label="Questionaire"
         >
           <MenuItem value="load">LOAD</MenuItem>
-          <MenuItem value="helsinki">Helsinki Chronic Pain Index</MenuItem>
+          {/* <MenuItem value="helsinki">Helsinki Chronic Pain Index</MenuItem> */}
         </Select>
       </FormControl>
-
       {questionaire === 'load' ? LOAD(makeQuestion) : Helsinki(makeQuestion)}
-      {/* Total: {total} */}
+
+      <form
+        style={{ margin: 'auto' }}
+        className={classes.root}
+        noValidate
+        autoComplete="off"
+      >
+        <DogPicker onChange={setDog} />
+        <br />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={async () => {
+            await db.load.add({
+              date: new Date(),
+              score: total,
+              dogID: dog,
+            });
+          }}
+        >
+          Save
+        </Button>
+      </form>
     </div>
   );
 }
